@@ -4,3 +4,8 @@ cache.db
 proxy.log
 proxy.err
 .DS_Store
+
+# Desktop (Electron)
+desktop/node_modules/
+desktop/dist/
+desktop/out/

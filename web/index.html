@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>指数基金量化助手</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header id="app-header">
+      <div class="header-left">
+        <span class="logo">📊</span>
+        <span class="title">指数基金量化助手</span>
+      </div>
+      <div class="header-right">
+        <span id="sync-status" class="sync-status" title="数据同步状态">🟢</span>
+        <span id="last-update" class="last-update"></span>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="app-content">
+      <!-- Dashboard Page -->
+      <section id="page-dashboard" class="page active">
+        <div class="loading-spinner" id="dashboard-loading">
+          <div class="spinner"></div>
+          <p>加载数据中...</p>
+        </div>
+        <div id="dashboard-content" style="display:none">
+          <!-- Signal Card -->
+          <div class="card signal-card" id="signal-card">
+            <div class="signal-icon" id="signal-icon">🟢</div>
+            <div class="signal-body">
+              <div class="signal-title" id="signal-title">--</div>
+              <div class="signal-detail" id="signal-detail">--</div>
+            </div>
+            <div class="signal-amount" id="signal-amount">--</div>
+          </div>
+
+          <!-- Temperature Gauges -->
+          <div class="card">
+            <h3 class="card-title">指数温度仪表盘</h3>
+            <div id="temp-gauges" class="temp-gauges"></div>
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="card">
+            <h3 class="card-title">持仓速览</h3>
+            <div class="stats-grid" id="stats-grid">
+              <div class="stat-item">
+                <span class="stat-label">累计投入</span>
+                <span class="stat-value" id="stat-invested">--</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">持仓市值</span>
+                <span class="stat-value" id="stat-value">--</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">总盈亏</span>
+                <span class="stat-value" id="stat-pnl">--</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">收益率</span>
+                <span class="stat-value" id="stat-pnl-pct">--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Index Detail Table -->
+          <div class="card">
+            <h3 class="card-title">标的详情</h3>
+            <div class="index-table" id="index-table"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Strategy Page -->
+      <section id="page-strategy" class="page">
+        <div class="card">
+          <h3 class="card-title">当前策略规则</h3>
+          <div class="rule-list" id="rule-list"></div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">温度 vs 阈值对比</h3>
+          <div id="threshold-chart-container">
+            <canvas id="threshold-chart"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">各标的详细信号</h3>
+          <div id="strategy-signals"></div>
+        </div>
+      </section>
+
+      <!-- History Page -->
+      <section id="page-history" class="page">
+        <div class="card">
+          <h3 class="card-title">历史日报查询</h3>
+          <div class="date-picker-row">
+            <input type="date" id="history-date-picker" class="date-picker">
+            <button id="history-load-btn" class="btn btn-primary">加载</button>
+            <button id="history-today-btn" class="btn btn-secondary">今天</button>
+          </div>
+        </div>
+        <div id="history-report" class="card"></div>
+        <div class="card">
+          <h3 class="card-title">可用日期</h3>
+          <div id="available-dates" class="available-dates"></div>
+        </div>
+      </section>
+
+      <!-- Profit Page -->
+      <section id="page-profit" class="page">
+        <div class="card">
+          <h3 class="card-title">收益概览</h3>
+          <div class="profit-summary" id="profit-summary"></div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">累计收益趋势</h3>
+          <div id="profit-chart-container">
+            <canvas id="profit-chart"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">交易记录</h3>
+          <div id="tx-records" class="tx-records"></div>
+        </div>
+      </section>
+
+      <!-- Manual Entry Page -->
+      <section id="page-manual" class="page">
+        <div class="card">
+          <h3 class="card-title">记录操作</h3>
+          <p class="card-subtitle">在支付宝完成交易后，在此记录实际成交信息</p>
+          <form id="manual-form" class="manual-form">
+            <div class="form-group">
+              <label for="mf-date">日期</label>
+              <input type="date" id="mf-date" required>
+            </div>
+            <div class="form-group">
+              <label for="mf-fund">基金</label>
+              <select id="mf-fund" required>
+                <option value="007466">007466 华泰柏瑞红利低波联接A</option>
+                <option value="000510">000510 中证A500（指数参考）</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="mf-action">操作类型</label>
+              <select id="mf-action" required>
+                <option value="定投">每日定投</option>
+                <option value="加仓">手动加仓</option>
+                <option value="止盈">止盈卖出</option>
+                <option value="调仓">调仓换基</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="mf-amount">金额（元）</label>
+              <input type="number" id="mf-amount" min="0" step="0.01" value="10" required>
+            </div>
+            <div class="form-group">
+              <label for="mf-nav">成交净值</label>
+              <input type="number" id="mf-nav" min="0" step="0.0001" placeholder="如不确定可留空">
+            </div>
+            <div class="form-group">
+              <label for="mf-note">备注</label>
+              <input type="text" id="mf-note" placeholder="选填">
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">保存记录</button>
+          </form>
+        </div>
+        <div class="card">
+          <h3 class="card-title">本地记录</h3>
+          <div id="manual-records" class="manual-records"></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav id="bottom-nav">
+      <button class="nav-btn active" data-page="dashboard">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">看板</span>
+      </button>
+      <button class="nav-btn" data-page="strategy">
+        <span class="nav-icon">📋</span>
+        <span class="nav-label">策略</span>
+      </button>
+      <button class="nav-btn" data-page="history">
+        <span class="nav-icon">📜</span>
+        <span class="nav-label">历史</span>
+      </button>
+      <button class="nav-btn" data-page="profit">
+        <span class="nav-icon">💰</span>
+        <span class="nav-label">收益</span>
+      </button>
+      <button class="nav-btn" data-page="manual">
+        <span class="nav-icon">✏️</span>
+        <span class="nav-label">记录</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/strategy.js"></script>
+  <script src="js/history.js"></script>
+  <script src="js/profit.js"></script>
+  <script src="js/manual.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

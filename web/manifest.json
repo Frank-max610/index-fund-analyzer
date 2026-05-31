@@ -1,0 +1,17 @@
+{
+  "name": "指数基金量化助手",
+  "short_name": "定投助手",
+  "description": "A股指数基金每日定投量化决策参考",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f0f1a",
+  "theme_color": "#1a1a2e",
+  "icons": [
+    {
+      "src": "assets/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

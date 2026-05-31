@@ -17,7 +17,8 @@ HEADERS = {
 
 INDEX_NAME_MAP = {
     "000300": "沪深300", "000905": "中证500", "000688": "科创50",
-    "000922": "中证红利", "399006": "创业板指", "000016": "上证50",
+    "000922": "上证红利", "399006": "创业板指", "000016": "上证50",
+    "000510": "沪深300",  # 中证A500 → 用沪深300作为PE/PB近似（同为大盘宽基）
 }
 
 LEGU_SYMBOLS = {
@@ -111,13 +112,29 @@ def _lego_pe_pb(name: str, kind: str = "pe") -> pd.DataFrame:
 
 
 def fetch_index_pe_pb(code: str) -> dict:
-    """获取指数 PE/PB 及分位"""
+    """获取指数 PE/PB 及分位（包含原始序列）"""
     name = INDEX_NAME_MAP.get(code)
     if name not in LEGU_SYMBOLS:
         name = "沪深300"
 
     key = f"pe_pb_{code}"
     return _cached(key, lambda: _fetch_pe_pb_impl(name), max_age=120)
+
+
+def _extract_pe_pb_vals(df, kind="pe"):
+    """从 legulegu DataFrame 中提取 PE/PB 数值序列"""
+    cols_to_try = ["close", "value", kind, "市盈率" if kind == "pe" else "市净率"]
+    col = None
+    for c in cols_to_try:
+        if c in df.columns:
+            col = c
+            break
+    if col is None and len(df.columns) >= 2:
+        col = df.columns[1]
+    if col:
+        vals = pd.to_numeric(df[col], errors="coerce").dropna()
+        return vals
+    return pd.Series(dtype=float)
 
 
 def _fetch_pe_pb_impl(name: str) -> dict:
@@ -131,42 +148,30 @@ def _fetch_pe_pb_impl(name: str) -> dict:
     except Exception:
         df_pb = pd.DataFrame()
 
-    result = {"pe": None, "pb": None, "pe_percentile": 0.5, "pb_percentile": 0.5}
+    result = {
+        "pe": None, "pb": None,
+        "pe_percentile": 0.5, "pb_percentile": 0.5,
+        "pe_series": [], "pb_series": [],
+    }
 
     if not df_pe.empty:
-        pe_col = None
-        for c in ["close", "value", "pe", "市盈率"]:
-            if c in df_pe.columns:
-                pe_col = c
-                break
-        if pe_col is None and len(df_pe.columns) >= 2:
-            pe_col = df_pe.columns[1]
-
-        if pe_col:
-            vals = pd.to_numeric(df_pe[pe_col], errors="coerce").dropna()
-            if len(vals) > 0:
-                result["pe"] = float(vals.iloc[-1])
-                result["pe_percentile"] = float((vals < result["pe"]).sum() / len(vals))
-                result["pe_min"] = float(vals.min())
-                result["pe_max"] = float(vals.max())
-                result["pe_median"] = float(vals.median())
+        vals = _extract_pe_pb_vals(df_pe, "pe")
+        if len(vals) > 0:
+            result["pe"] = float(vals.iloc[-1])
+            result["pe_percentile"] = float((vals < result["pe"]).sum() / len(vals))
+            result["pe_min"] = float(vals.min())
+            result["pe_max"] = float(vals.max())
+            result["pe_median"] = float(vals.median())
+            result["pe_series"] = [float(v) for v in vals.tolist()]
 
     if not df_pb.empty:
-        pb_col = None
-        for c in ["close", "value", "pb", "市净率"]:
-            if c in df_pb.columns:
-                pb_col = c
-                break
-        if pb_col is None and len(df_pb.columns) >= 2:
-            pb_col = df_pb.columns[1]
-
-        if pb_col:
-            vals = pd.to_numeric(df_pb[pb_col], errors="coerce").dropna()
-            if len(vals) > 0:
-                result["pb"] = float(vals.iloc[-1])
-                result["pb_percentile"] = float((vals < result["pb"]).sum() / len(vals))
-                result["pb_min"] = float(vals.min())
-                result["pb_max"] = float(vals.max())
+        vals = _extract_pe_pb_vals(df_pb, "pb")
+        if len(vals) > 0:
+            result["pb"] = float(vals.iloc[-1])
+            result["pb_percentile"] = float((vals < result["pb"]).sum() / len(vals))
+            result["pb_min"] = float(vals.min())
+            result["pb_max"] = float(vals.max())
+            result["pb_series"] = [float(v) for v in vals.tolist()]
 
     return result
 

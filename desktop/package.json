@@ -1,0 +1,58 @@
+{
+  "name": "index-fund-analyzer",
+  "version": "1.0.0",
+  "description": "指数基金量化辅助系统 — Windows桌面客户端",
+  "main": "main.js",
+  "author": "Frank",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build:win": "electron-builder --win portable",
+    "build:win:installer": "electron-builder --win nsis"
+  },
+  "dependencies": {
+    "simple-git": "^3.25.0"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.0"
+  },
+  "build": {
+    "appId": "com.frank.index-fund-analyzer",
+    "productName": "指数基金量化助手",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "tray.js",
+      "assets/**",
+      "../web/**",
+      "../data/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        },
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "指数基金量化助手"
+    },
+    "portable": {
+      "artifactName": "指数基金量化助手-${version}-portable.exe"
+    }
+  }
+}

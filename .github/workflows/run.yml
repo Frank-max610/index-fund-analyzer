@@ -1,24 +1,42 @@
-name: 007466 定投日报
+name: 指数基金定投日报
 
 on:
   schedule:
-    - cron: '0 0 * * 1-5'   # UTC 0:00 = 北京时间 8:00
-  workflow_dispatch:
+    - cron: '0 0 * * 1-5'   # UTC 00:00 = 北京时间 08:00（工作日）
+  workflow_dispatch:          # 支持手动触发
 
 jobs:
   analyze:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: write          # 需要 push 权限以提交数据文件
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-      - name: Install
-        run: pip install pandas numpy requests schedule curl_cffi lxml
-      - name: Run
+          python-version: '3.12'
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 运行分析
         env:
           FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
         run: |
-          sed -i 's|FEISHU_WEBHOOK_URL = ""|FEISHU_WEBHOOK_URL = "'"$FEISHU_WEBHOOK"'"|' config.py
+          # 注入飞书 Webhook URL（如果 Secret 已配置）
+          if [ -n "$FEISHU_WEBHOOK" ]; then
+            sed -i 's|FEISHU_WEBHOOK_URL = ".*"|FEISHU_WEBHOOK_URL = "'"$FEISHU_WEBHOOK"'"|' config.py
+          fi
           python3 main.py --once
+
+      - name: 提交数据到 Git 仓库
+        run: |
+          git config user.name "index-fund-bot"
+          git config user.email "bot@index-fund-analyzer.local"
+          git add data/daily/ data/ledger.json data/portfolio_state.json data/reports/ 2>/dev/null || true
+          git diff --staged --quiet || (git commit -m "📊 定投日报 $(date +%Y-%m-%d)" && git push)
