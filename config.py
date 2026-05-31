@@ -64,7 +64,7 @@ DECISION_MAP = [
 ]
 
 # ========== 飞书通知 ==========
-FEISHU_WEBHOOK_URL = ""
+FEISHU_WEBHOOK_URL = ""  # 通过 GitHub Secret 注入，避免公开泄露
 
 # ========== 数据库 ==========
 DB_PATH = "cache.db"
