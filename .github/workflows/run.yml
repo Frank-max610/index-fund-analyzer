@@ -1,8 +1,8 @@
-name: 指数基金定投日报
+name: 007466 定投日报
 
 on:
   schedule:
-    - cron: '30 7 * * 1-5'
+    - cron: '0 0 * * 1-5'   # UTC 0:00 = 北京时间 8:00
   workflow_dispatch:
 
 jobs:
