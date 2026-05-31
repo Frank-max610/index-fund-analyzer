@@ -1,0 +1,30 @@
+name: 指数基金定投日报
+
+on:
+  schedule:
+    # 北京时间 15:30 = UTC 07:30，周一至周五
+    - cron: '30 7 * * 1-5'
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pandas numpy requests schedule curl_cffi lxml
+
+      - name: Run analysis
+        env:
+          FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
+        run: |
+          # 注入飞书 webhook 到 config
+          sed -i 's|FEISHU_WEBHOOK_URL = ""|FEISHU_WEBHOOK_URL = "'"$FEISHU_WEBHOOK"'"|' config.py
+          python3 main.py --once
