@@ -14,6 +14,12 @@ const API = {
         || location.protocol === 'file:';
   },
 
+  // GitHub Raw / CDN 等纯远程环境（数据文件不在同源）
+  _isRemoteHost() {
+    return location.hostname === 'raw.githubusercontent.com'
+        || location.hostname.endsWith('github.io');
+  },
+
   // ── 获取单日数据 ──
   async fetchDaily(date) {
     // 先查缓存
@@ -37,21 +43,24 @@ const API = {
       }
     }
 
-    // 本地开发模式：HTTP fetch 相对路径
-    if (this._isLocal()) {
-      try {
-        const localUrl = `../data/daily/${date}.json`;
-        console.log(`[API] 本地加载: ${localUrl}`);
-        const resp = await fetch(localUrl);
-        if (resp.ok) {
-          const data = await resp.json();
-          Storage.setDaily(date, data);
-          return data;
-        }
-      } catch {}
+    // 本地开发 / Cloudflare Pages 等静态托管：优先同源加载
+    if (!this._isRemoteHost()) {
+      // 尝试两个路径：相对路径（本地）和绝对路径（CF Pages）
+      const paths = [`../data/daily/${date}.json`, `/data/daily/${date}.json`];
+      for (const p of paths) {
+        try {
+          const resp = await fetch(p);
+          if (resp.ok) {
+            const data = await resp.json();
+            Storage.setDaily(date, data);
+            console.log(`[API] ${date} → 同源加载 (${p})`);
+            return data;
+          }
+        } catch {}
+      }
     }
 
-    // 云端模式：GitHub Raw
+    // 云端模式：GitHub Raw（兜底）
     const url = dataUrl(`${CONFIG.DAILY_DIR}/${date}.json`);
     console.log(`[API] GitHub Raw: ${url}`);
 
@@ -63,7 +72,7 @@ const API = {
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
       Storage.setDaily(date, data);
-      console.log(`[API] ${date} → 加载成功`);
+      console.log(`[API] ${date} → GitHub Raw 加载成功`);
       return data;
     } catch (err) {
       console.warn(`[API] ${date} → 加载失败: ${err.message}`);
@@ -103,22 +112,21 @@ const API = {
   async _fetchJSON(remotePath) {
     // 桌面端：IPC 直接读
     if (this._isDesktop()) {
-      try {
-        return await window.desktopAPI.fs.readJSON(remotePath);
-      } catch {}
+      try { return await window.desktopAPI.fs.readJSON(remotePath); } catch {}
     }
-    // 本地模式：HTTP
-    if (this._isLocal()) {
-      try {
-        const localUrl = `../${remotePath}`;
-        const resp = await fetch(localUrl);
-        if (resp.ok) return await resp.json();
-      } catch {}
+    // 同源静态托管：相对 + 绝对路径尝试
+    if (!this._isRemoteHost()) {
+      const paths = [`../${remotePath}`, `/${remotePath}`];
+      for (const p of paths) {
+        try {
+          const resp = await fetch(p);
+          if (resp.ok) return await resp.json();
+        } catch {}
+      }
     }
-    // 远程模式：GitHub Raw
+    // GitHub Raw 兜底
     try {
-      const url = dataUrl(remotePath);
-      const resp = await fetch(url, { cache: 'no-cache' });
+      const resp = await fetch(dataUrl(remotePath), { cache: 'no-cache' });
       if (resp.ok) return await resp.json();
     } catch (err) {
       console.warn(`[API] 加载失败: ${remotePath}`, err.message);
