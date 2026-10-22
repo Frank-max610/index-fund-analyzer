@@ -1,17 +1,17 @@
 {
-  "updated_at": "2026-10-21 02:33:12",
-  "total_invested": 710,
-  "total_shares": 710.0,
+  "updated_at": "2026-10-22 02:30:19",
+  "total_invested": 720,
+  "total_shares": 720.0,
   "current_nav": 1.0,
-  "current_value": 710.0,
+  "current_value": 720.0,
   "unrealized_pnl": 0.0,
   "unrealized_pnl_pct": 0.0,
   "positions": [
     {
       "fund_code": "007466",
       "fund_name": "华泰柏瑞中证红利低波ETF联接A",
-      "total_shares": 710.0,
-      "total_invested": 710,
+      "total_shares": 720.0,
+      "total_invested": 720,
       "avg_cost": 1.0
     }
   ]
