@@ -948,11 +948,22 @@
       "shares_acquired": 10.0,
       "temperature_at_action": 71.3,
       "reason": "持有+定投（温度 71.3% 在 50%-80%）"
+    },
+    {
+      "date": "2026-11-24",
+      "fund_code": "007466",
+      "index_code": "H30269",
+      "action": "定投",
+      "amount": 10,
+      "nav_at_action": 1.0,
+      "shares_acquired": 10.0,
+      "temperature_at_action": 65.8,
+      "reason": "持有+定投（温度 65.8% 在 50%-80%）"
     }
   ],
   "cumulative": {
-    "total_invested": 860,
-    "total_shares": 860.0,
+    "total_invested": 870,
+    "total_shares": 870.0,
     "current_value": 0.0,
     "unrealized_pnl": 0.0,
     "unrealized_pnl_pct": 0.0
